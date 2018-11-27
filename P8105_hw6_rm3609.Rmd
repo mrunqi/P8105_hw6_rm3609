@@ -74,6 +74,52 @@ each_city =
 
 Create a plot that shows the estimated ORs and CIs for each city. Organize cities according to estimated OR, and comment on the plot.
 ```{r}
+each_city %>% 
+  mutate(city_state = fct_reorder(city_state, OR)) %>% 
+  ggplot(aes(x = city_state, y = OR)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf_low_adj, ymax = conf_high_adj)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+#Problem 2
+Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
+```{r}
+bw_data = read_csv("./birthweight.csv")
+
+bw_data %>% 
+  mutate(babysex = as.factor(babysex), 
+         frace = as.factor(frace),  
+         malform = as.factor(malform),  
+         mrace = as.factor(mrace))
+  
+sum(is.na(bw_data))
+```
+
+Propose a regression model for birthweight. 
+This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process and show a plot of model residuals against fitted values – use add_predictions and add_residuals in making this plot.
+```{r}
+bwt_model = lm(bwt ~ ., data = bw_data)
+step(bwt_model, direction = 'both')
+
+bwt_model_final = lm(bwt ~ babysex + bhead + blength + delwt + fincome + gaweeks + menarche + mheight + momage + mrace + parity + ppwt + smoken, data = bw_data)
+
+bw_data %>% 
+  add_predictions(bwt_model_final) %>% 
+  add_residuals(bwt_model_final) %>% 
+  ggplot(aes(x = pred, y = resid)) + 
+  geom_point(alpha = 0.25) + 
+  geom_smooth()
+```
+
+Compare your model to two others:
+One using length at birth and gestational age as predictors (main effects only)
+One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
+Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in purrr as appropriate.
+```{r}
+lm(bwt~blength + gaweeks, data = bw_data)
+lm(bwt~bhead + blength + babysex + babysex * blength + babysex * bhead + blength * bhead + babysex * blength * bhead, data = bw_data)
 
 ```
+
 
